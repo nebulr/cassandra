@@ -31,6 +31,8 @@ RUN yum -y update && yum -y install dsc22.2.2.4 cassandra2.2.4;
 RUN systemctl start cassandra;
 RUN systemctl enable cassandra
 
+#install lucenne
+
 ### Cassandra
 # 7000: C* intra-node communication
 # 7199: C* JMX
