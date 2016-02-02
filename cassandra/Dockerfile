@@ -7,9 +7,10 @@ FROM centos:centos7
 # Add source repositories
 ADD src/epel7.repo /etc/yum.repos.d/epel7.repo
 ADD src/datastax.repo /etc/yum.repos.d/datastax.repo
+ADD src/epel-apache-maven.repo /etc/yum.repos.d/epel-apache-maven.repo
 
 # Install Java, Install packages (sshd + supervisord + monitoring tools + cassandra)
-RUN yum install -y wget tar openssh-server openssh-clients supervisor sysstat sudo which openssl hostname
+RUN yum install -y wget tar openssh-server openssh-clients supervisor sysstat sudo git which openssl hostname apache-maven
 RUN yum install -y java-1.8.0-openjdk-headless
 RUN yum install -y dsc22
 RUN yum clean all
@@ -23,6 +24,12 @@ RUN mkdir -p /var/run/sshd && chmod -rx /var/run/sshd && \
 	sed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config && \
 	useradd -m -G users,root -p $(openssl passwd -1 "opscenter") opscenter && \
 	echo "%root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Config cassandra-lucene
+RUN git clone https://github.com/Stratio/cassandra-lucene-index.git
+RUN cd cassandra-lucene-index
+RUN mvn clean package
+RUN cp plugin/target/cassandra-lucene-index-plugin-*.jar /usr/share/cassandra/lib/
 
 # Configure supervisord
 ADD src/supervisord.conf /etc/supervisord.conf
