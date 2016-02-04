@@ -9,6 +9,7 @@ These images are great to provision ephemeral Cassandra topologies for testing a
     - A client container to run tools such as cqlsh, nodetool, etc.
     - A multi-node cluster - running on a single Docker host
     - Monitored cluster using OpsCenter
+    - Lucene query searches - See [https://github.com/Stratio/cassandra-lucene-index](https://github.com/Stratio/cassandra-lucene-index)
 
 If you'd like to help, please get in touch with me, and/or send me pull requests.
 
