@@ -13,6 +13,31 @@ These images are great to provision ephemeral Cassandra topologies for testing a
 
 If you'd like to help, please get in touch with me, and/or send me pull requests.
 
+Features
+--------
+
+-  Full text search
+-  Geospatial search
+-  Bitemporal search
+-  Boolean (and, or, not) search
+-  Near real-time search
+-  Relevance scoring and sorting
+-  General top-k queries
+-  Custom analyzers
+-  CQL complex types (list, set, map, tuple and UDT)
+-  CQL user defined functions (UDF)
+-  Third-party CQL-based drivers compatibility
+-  Spark compatibility
+-  Hadoop compatibility
+
+Not yet supported:
+
+-  Thrift API
+-  Legacy compact storage option
+-  Indexing ``counter`` columns
+-  Columns with TTL
+-  Indexing static columns
+
 
 Prerequisites
 -------------
@@ -231,3 +256,158 @@ Cassandra cluster + OpsCenter monitoring
     - In the popup, click "Enter Credentials" link and fill form with username `opscenter` and password `opscenter`. Click "Done".
     - Click "Install on all nodes" and then "Accept Fingerprints". OpsCenter installs agent on cluster'snodes remotly.
     - Once done, you should see the "All agents connected" message.
+    
+Example
+-------
+
+We will create the following table to store tweets:
+
+.. code-block:: sql
+
+    CREATE KEYSPACE demo
+    WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor': 1};
+    USE demo;
+    CREATE TABLE tweets (
+        id INT PRIMARY KEY,
+        user TEXT,
+        body TEXT,
+        time TIMESTAMP,
+        latitude FLOAT,
+        longitude FLOAT,
+        lucene TEXT
+    );
+
+We have created a column called *lucene* to link the index searches. This column will not store data. Now you can create
+a custom Lucene index on it with the following statement:
+
+.. code-block:: sql
+
+    CREATE CUSTOM INDEX tweets_index ON tweets (lucene)
+    USING 'com.stratio.cassandra.lucene.Index'
+    WITH OPTIONS = {
+        'refresh_seconds' : '1',
+        'schema' : '{
+            fields : {
+                id    : {type : "integer"},
+                user  : {type : "string"},
+                body  : {type : "text", analyzer : "english"},
+                time  : {type : "date", pattern : "yyyy/MM/dd", sorted : true},
+                place : {type : "geo_point", latitude:"latitude", longitude:"longitude"}
+            }
+        }'
+    };
+
+This will index all the columns in the table with the specified types, and it will be refreshed once per second.
+Alternatively, you can explicitly refresh all the index shards with an empty search with consistency ``ALL``:
+
+.. code-block:: sql
+
+    CONSISTENCY ALL
+    SELECT * FROM tweets WHERE lucene = '{refresh:true}';
+    CONSISTENCY QUORUM
+
+Now, to search for tweets within a certain date range:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"}
+    }' limit 100;
+
+The same search can be performed forcing an explicit refresh of the involved index shards:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+        refresh : true
+    }' limit 100;
+
+Now, to search the top 100 more relevant tweets where *body* field contains the phrase “big data gives organizations”
+within the aforementioned date range:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+        query  : {type:"phrase", field:"body", value:"big data gives organizations", slop:1}
+    }' limit 100;
+
+To refine the search to get only the tweets written by users whose name starts with “a”:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"boolean", must:[
+                       {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+                       {type:"prefix", field:"user", value:"a"} ] },
+        query  : {type:"phrase", field:"body", value:"big data gives organizations", slop:1}
+    }' limit 100;
+
+To get the 100 more recent filtered results you can use the *sort* option:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"boolean", must:[
+                       {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+                       {type:"prefix", field:"user", value:"a"} ] },
+        query  : {type:"phrase", field:"body", value:"big data gives organizations", slop:1},
+        sort   : {fields: [ {field:"time", reverse:true} ] }
+    }' limit 100;
+
+The previous search can be restricted to a geographical bounding box:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"boolean", must:[
+                       {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+                       {type:"prefix", field:"user", value:"a"},
+                       {type:"geo_bbox",
+                        field:"place",
+                        min_latitude:40.225479,
+                        max_latitude:40.560174,
+                        min_longitude:-3.999278,
+                        max_longitude:-3.378550} ] },
+        query  : {type:"phrase", field:"body", value:"big data gives organizations", slop:1},
+        sort   : {fields: [ {field:"time", reverse:true} ] }
+    }' limit 100;
+
+Alternatively, you can restrict the search to retrieve tweets that are within a specific distance from a geographical position:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"boolean", must:[
+                       {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+                       {type:"prefix", field:"user", value:"a"},
+                       {type:"geo_distance",
+                        field:"place",
+                        latitude:40.393035,
+                        longitude:-3.732859,
+                        max_distance:"10km",
+                        min_distance:"100m"} ] },
+        query  : {type:"phrase", field:"body", value:"big data gives organizations", slop:1},
+        sort   : {fields: [ {field:"time", reverse:true} ] }
+    }' limit 100;
+
+Finally, if you want to restrict the search to a certain token range:
+
+.. code-block:: sql
+
+    SELECT * FROM tweets WHERE lucene='{
+        filter : {type:"boolean", must:[
+                       {type:"range", field:"time", lower:"2014/04/25", upper:"2014/05/01"},
+                       {type:"prefix", field:"user", value:"a"} ,
+                       {type:"geo_distance",
+                        field:"place",
+                        latitude:40.393035,
+                        longitude:-3.732859,
+                        max_distance:"10km",
+                        min_distance:"100m"} ] },
+        query  : {type:"phrase", field:"body", value:"big data gives organizations", slop:1]}
+    }' AND token(id) >= token(0) AND token(id) < token(10000000) limit 100;
+
+This last is the basis for Hadoop, Spark and other MapReduce frameworks support.
+Please, refer to the comprehensive `Stratio’s Cassandra Lucene Index documentation <doc/src/site/sphinx/documentation.rst>`__.
