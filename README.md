@@ -1,4 +1,4 @@
-Cassandra on Docker
+Lucene + Cassandra = Lussandra on Docker
 ===================
 
 This is a collection of images and scripts to help you run Cassandra in Docker containers.
