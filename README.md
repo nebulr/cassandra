@@ -57,13 +57,13 @@ Single Cassandra node
 Here's how to start a Cassandra cluster with a single node, and run some CQL on it. These instructions use the docker command directly to demonstrate what's happening behind the scenes. 
 
 
-1. Launch a container running Cassandra called cassone:
+1. Launch a container running Cassandra called lussandra:
 
-        docker run --detach --name cassone poklet/cassandra
+        docker run --detach --name lussandra lussandra/cassandra
 
 2. Connect to it using cqlsh
 
-        docker run -it --rm --net container:cassone poklet/cassandra cqlsh
+        docker run -it --rm --net container:lussandra lussandra/cassandra cqlsh
 
     You should see something like:
 
@@ -112,22 +112,22 @@ Here's how to start a Cassandra cluster with a single node, and run some CQL on 
 
 1. Launch three containers (one seed plus two more)
 
-        docker run -d --name cass1 poklet/cassandra start
-        docker run -d --name cass2 --link cass1:seed poklet/cassandra start seed
-        docker run -d --name cass3 --link cass1:seed poklet/cassandra start seed
+        docker run -d --name cass1 lussandra/cassandra start
+        docker run -d --name cass2 --link cass1:seed lussandra/cassandra start seed
+        docker run -d --name cass3 --link cass1:seed lussandra/cassandra start seed
 
 
-    Note: The poklet/cassandra docker image contains a shell script called `start` that takes an optional seed host. We use `--link cass1:seed` to name the cass1 host as our seed host.
+    Note: The lussandra/cassandra docker image contains a shell script called `start` that takes an optional seed host. We use `--link cass1:seed` to name the cass1 host as our seed host.
 
 2. Run `nodetool status` on cass1 to check the cluster status:
 
-        docker run -it --rm --net container:cass1 poklet/cassandra nodetool status
+        docker run -it --rm --net container:cass1 lussandra/cassandra nodetool status
 
 3. Create some data on the first container:
 
     Launch `cqlsh`:
 
-        docker run -it --rm --net container:cass1 poklet/cassandra cqlsh
+        docker run -it --rm --net container:cass1 lussandra/cassandra cqlsh
 
     Paste this in:
 
@@ -142,7 +142,7 @@ Here's how to start a Cassandra cluster with a single node, and run some CQL on 
 
     Start up `cqlsh` (on cass2 this time):
 
-        docker run -it --rm --net container:cass2 poklet/cassandra cqlsh
+        docker run -it --rm --net container:cass2 lussandra/cassandra cqlsh
 
     Paste in:
 
@@ -212,7 +212,7 @@ The snitch type and node location information can be configured with environment
 The datacenter and rack configuration is only valid if using the GossipingPropertyFileSnitch type snitch.
 For example:
 
-        docker run -d --name cass1 -e SNITCH=GossipingPropertyFileSnitch -e DC=SFO -e RACK=RAC3 poklet/cassandra
+        docker run -d --name cass1 -e SNITCH=GossipingPropertyFileSnitch -e DC=SFO -e RACK=RAC3 lussandra/cassandra
 
 This will set the snitch type and set the datacenter to **SFO** and the rack to **RAC3**
 
@@ -221,9 +221,9 @@ Auto-detect seeds
 
 Any containers linked in the run command will also be added to the seed list.  The 3-node cluster example above may also be written as:
 
-        docker run -d --name cass1 poklet/cassandra
-        docker run -d --name cass2 --link cass1:cass1 poklet/cassandra
-        docker run -d --name cass3 --link cass1:cass1 poklet/cassandra
+        docker run -d --name cass1 lussandra/cassandra
+        docker run -d --name cass2 --link cass1:cass1 lussandra/cassandra
+        docker run -d --name cass3 --link cass1:cass1 lussandra/cassandra
         # and so on...
 
 Specifying clustering parameters
@@ -231,7 +231,7 @@ Specifying clustering parameters
 
 When starting a container, you can pass the SEEDS, LISTEN_ADDRESS environment variables to override the defaults:
 
-    docker run -e SEEDS=a,b,c... -e LISTEN_ADDRESS=10.2.1.4 poklet/cassandra
+    docker run -e SEEDS=a,b,c... -e LISTEN_ADDRESS=10.2.1.4 lussandra/cassandra
 
 Note that listen_address will also be used for broadcast_address
 
@@ -244,7 +244,7 @@ Cassandra cluster + OpsCenter monitoring
 
 2. Start the OpsCenter container:
 
-        docker run -d --name opscenter poklet/opscenter
+        docker run -d --name opscenter lussandra/opscenter
 
     You can also add the `-p 8888:8888` option to bind container's 8888 port to host's 8888 port
 
