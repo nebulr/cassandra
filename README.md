@@ -54,16 +54,16 @@ The last step is optional because Docker will automatically pull the images from
 
 Single Cassandra node
 -----------------------------------
-Here's how to start a Cassandra cluster with a single node, and run some CQL on it. These instructions use the docker command directly to demonstrate what's happening behind the scenes. 
+Here's how to start a Cassandra cluster with a single node, and run some CQL on it. These instructions use the docker command directly to demonstrate what's happening behind the scenes.
 
 
 1. Launch a container running Cassandra called lussandra:
 
-        docker run --detach --name lussandra lussandra/cassandra
+        docker run --detach --name lussandra yaranai/lussandra
 
 2. Connect to it using cqlsh
 
-        docker run -it --rm --net container:lussandra lussandra/cassandra cqlsh
+        docker run -it --rm --net container:lussandra yaranai/lussandra cqlsh
 
     You should see something like:
 
@@ -78,32 +78,32 @@ Here's how to start a Cassandra cluster with a single node, and run some CQL on 
 
 	Paste the following into your cqlsh prompt to create a test keyspace, and a test table:
 
-		CREATE KEYSPACE test_keyspace WITH REPLICATION = 
+		CREATE KEYSPACE test_keyspace WITH REPLICATION =
 		{'class': 'SimpleStrategy', 'replication_factor': 1};
-		
+
 		USE test_keyspace;
-		
+
 		CREATE TABLE test_table (
 		  id text,
 		  test_value text,
 		  PRIMARY KEY (id)
 		);
-		
+
 		INSERT INTO test_table (id, test_value) VALUES ('1', 'one');
 		INSERT INTO test_table (id, test_value) VALUES ('2', 'two');
 		INSERT INTO test_table (id, test_value) VALUES ('3', 'three');
-		
+
 		SELECT * FROM test_table;
 
 
 	If that worked, you should see:
-	
+
 		 id | test_value
 		----+------------
 		  3 |      three
 		  2 |        two
 		  1 |        one
-		
+
 		(3 rows)
 
 
@@ -136,7 +136,7 @@ Here's how to start a Cassandra cluster with a single node, and run some CQL on 
         create table names ( id int primary key, name text );
         insert into names (id,name) values (1, 'gibberish');
         quit;
-        
+
 
 4. Connect to the second container, and check if it can see your data:
 
@@ -256,7 +256,7 @@ Cassandra cluster + OpsCenter monitoring
     - In the popup, click "Enter Credentials" link and fill form with username `opscenter` and password `opscenter`. Click "Done".
     - Click "Install on all nodes" and then "Accept Fingerprints". OpsCenter installs agent on cluster'snodes remotly.
     - Once done, you should see the "All agents connected" message.
-    
+
 Example
 -------
 
