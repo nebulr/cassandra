@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Accept listen_address
 IP=${LISTEN_ADDRESS:-`hostname --ip-address`}
