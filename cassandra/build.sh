@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 cd $(dirname $0)
-docker build -t yaranai/cassandra .
+docker build -t yaranai/lussandra .

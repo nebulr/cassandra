@@ -12,7 +12,7 @@ ADD src/epel7.repo /etc/yum.repos.d/epel7.repo
 ADD src/datastax.repo /etc/yum.repos.d/datastax.repo
 
 # Install Java, Install packages (sshd + supervisord + monitoring tools + cassandra)
-RUN yum install -y wget tar openssh-server openssh-clients supervisor sysstat sudo which openssl hostname git
+RUN yum install -y bash wget tar openssh-server openssh-clients supervisor sysstat sudo which openssl hostname git
 RUN yum clean all
 
 # Install maven 3.3.3
@@ -53,7 +53,6 @@ ADD src/start.sh /usr/local/bin/start
 # See https://groups.google.com/forum/#!msg/docker-dev/8TM_jLGpRKU/dewIQhcs7oAJ
 RUN rm -f /etc/security/limits.d/cassandra.conf
 
-USER docker
 EXPOSE 7199 7000 7001 9160 9042
 EXPOSE 22 8012 61621
 CMD start
